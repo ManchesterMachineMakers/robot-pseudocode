@@ -1,0 +1,68 @@
+open robotcore/external/tfod [Detection]
+open robotcore/external/matrices [OpenGLMatrix]
+open util/pathfinder [Path]
+
+opmode CenterStageAutonomous {
+	(use [DriveBase Vision Arm Pathfinder])
+	(input $alliance : enum Alliance {
+		- red, blue
+	})
+
+	enum RecognitionPosition {
+		- left, center, right
+
+		static def fromInt [int value] : Self { RecognitionPosition enum value of [value] }
+		static def of [Detection recognition] : Self {
+			set sectionSize := recognition.imageWidth / 2
+			set recognitionCenter := recognition.left + (recognition.width / 2)
+			return RecognitionPosition/fromInt[2 - Math/floor[recognitionCenter / sectionSize]]
+		}
+	}
+
+	const tapePixelPlacement = dict<RecognitionPosition, Path>[
+		left => (path to left tape marker)
+		center => (path to center tape marker)
+		right => (path to right tape marker)
+	]
+
+	const pathToBackdrop = dict<Alliance, Path> [
+		red => ...
+		blue => ...
+	]
+
+	run {
+		waitForStart
+
+		var element : ?Detection
+		var pos : ?RecognitionPosition
+
+		while (set element := Vision/getDefiniteRecognitions[]?.0) == null {
+			DriveBase/drive[forward, 0.2]
+		}
+
+		DriveBase/stop[]
+
+		if element == null || element/label != 'duck' {
+			panic slightly with logs or something
+		} else {
+			set pos := RecognitionPosition/of[element]
+
+			Pathfinder/runPath[tapePixelPlacement/get[pos]]
+			Arm/placePixelOnGround[right]
+		}
+
+		Pathfinder/runPath[pathToBackdrop/get[$alliance]]
+
+		while !Vision/detectedAprilTag[$alliance ++ ('AllianceLeft' or 'AllianceCenter' or 'AllianceRight')] {
+			if pos != center then DriveBase/drive[
+				switch pos {
+					left => left,
+					right => right
+				}
+				0.2
+			]
+		}
+
+		Arm/placePixelOnBackdrop[left Arm/backdropGrid[0 0] relative]
+	}
+}

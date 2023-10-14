@@ -1,0 +1,7 @@
+open robotcore/external/tfod [Detection]
+
+contract assembly Vision {
+    def getDefiniteRecognitions [] : list<Detection>
+
+    def detectedAprilTag [(string label)] : bool
+}

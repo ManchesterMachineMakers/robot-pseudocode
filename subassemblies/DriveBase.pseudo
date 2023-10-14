@@ -1,0 +1,81 @@
+assembly DriveBase {
+	(property float maxPower) // Max power - 0 to 1
+
+    // used for Mecanum Drive
+    (device DcMotor motorLeftFront)  
+    (device DcMotor motorLeftRear)
+    (device DcMotor motorRightRear)
+    (device DcMotor motorRightFront)
+
+    // used for Tank Drive
+    (device DcMotor motorLeft) 
+    (device DcMotor motorRight) 
+
+    // enumeration and reference values for drive configurations
+    //  for Mecanum, Tank, and Programming Board
+    (enum DriveConfiguration)
+    variable driveBaseConfigurationStyle = DriveConfiguration value
+
+    // reference values for wheels should be defined in the drive configurations, and 
+    //  referenced here:
+    variable wheelDiameterInches
+    variable wheelRotationDistanceInches = PI * wheelDiameterInches
+    variable wheelBaseWidth
+    // for calculating positioning by encoder:
+    variable motorEncoderEventsPerRotation
+
+    // reference values for travel directions, so that we can figure 
+    // out what the individual motors should do for traveling across
+    // the field
+    (enum TravelDirection
+        - forward, reverse, strafes, pivots
+
+        static def fromAngle [(float radians)] : TravelDirection
+    )
+
+    def stop {
+        set the pleaseStop variable to true, to signal an interrupt.
+        set all power to 0.
+    }
+
+    def initMotors {
+        set travel direction to forward,
+        set all power to 0,
+        set all motors  to run using encoders.
+    }
+    
+    def getTravelDirection {
+        return the current direction from the settings of all motors.
+    }
+
+    def setTravelDirection  {
+        set all the motors to make the robot go the direction you want.
+    }
+
+    def getDriveConfiguration {
+        get the settings of all motors for a given travel direction.
+    }
+
+    def setPower [float power] {
+        if we haven't been asked to stop
+        set each motor to the given power, 
+        either to absolute values or  
+        based on the drive configuration.
+        (overloads to allow flexibility of use.)
+    }
+
+    def drive [(TravelDirection direction) (float power)] {
+        // simple drive in a given direction
+        if we haven't been asked to stop
+        - set the travel direction
+        - set the power
+        // goes until told to stop.
+    }
+
+    def driveTicks {
+        // drives based on encoder values
+        set the desired position on each wheel
+        set the motors to run to the position
+
+    }
+}
